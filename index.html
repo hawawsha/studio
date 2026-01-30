@@ -1,30 +1,93 @@
-// 1ƒ71…71„71ƒ91„71ƒ91„2 1„01‡41ƒ81„1 1„21…51„01‡41†6 1ƒ91†81‡11‡21ƒ91‡21…21„1 (Backend Interface)
-const Pi = window.Pi;
-// 1„21†51…71‡41†8 1ƒ91†81†4 Sandbox 1†81…41†91ƒ91‡0 1…71†91†8 1ƒ91†81„91ƒ91„01…5 1„71ƒ91„61†8 Pi Browser 1„01„71‡21‡0 1†91…21ƒ91†71†8
-Pi.init({ version: "2.0", sandbox: true, apiKey: "sjio540h9unsvq5fq5ogw8iqst7k9eif2jrqzv8a5bdxnrchshsnnm1fljhshyfo" });
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>واجهة الاستوديو - Pi Network</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        button {
+            background-color: #673ab7;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        button:hover {
+            background-color: #512da8;
+        }
+        #status {
+            margin-top: 20px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
 
-// 1…71‡01‡21ƒ91‡0 1ƒ91†81†91„51†51…61„1 1ƒ91†81„31ƒ91†81„31„1 (1„61…01‡01„1 1ƒ91†81†91‡01…31„1 1ƒ91†81†91„91†71…01‡41„1) - 1ƒ91†81†91„91„21„01…51„1 1„01†91„51†51…61„1 1ƒ51„61„21†7
-const platformWalletAddress = "GAJY6WGGRRGEFXTPMZAIC57MEKZUA5XMWYOWUQ4KL4GEUE3ZJWVUTJZN"; 
+    <div class="container">
+        <h2>واجهة التحكم في الاستوديو</h2>
+        <p>مرحباً بك في الواجهة الخلفية لتطبيقك الأصلي.</p>
+        
+        <button onclick="handlePayment(1, 'طلب خدمة من الاستوديو')">إرسال دفع تجريبي</button>
+        
+        <div id="status">جاهز للاتصال بـ Pi Network...</div>
+    </div>
 
-async function handlePayment(amount, itemName) {
-    try {
-        console.log("1ƒ71„91…11ƒ91†8 1…51†81„0 1„71†51…7 1†81†81†91„51†51…61„1: " + platformWalletAddress);
-        const payment = await Pi.createPayment({
-            amount: amount,
-            memo: "1„51„41…0 1†91‡0 1†91‡01…31„1 1ƒ91†81‡11‡21ƒ91‡21…21„1: " + itemName,
-            metadata: { type: "reservation", target_wallet: platformWalletAddress },
-        }, {
-            onReadyForServerApproval: (paymentId) => {
-                console.log("Payment ID ready for approval:", paymentId);
-            },
-            onReadyForServerCompletion: (paymentId, txid) => {
-                console.log("1„21†91„2 1ƒ91†81…71†91†81‡41„1 1„01‡01„41ƒ91„5! 1„91†61†9 1ƒ91†81†91…71ƒ91†91†81„1:", txid);
-                alert("1„21†9 1ƒ91†81„51„41…0 1„01‡01„41ƒ91„5! 1…11‡41„21†9 1ƒ91†81„21‡21ƒ91…31†8 1†91…71†7 1†61„91‡41„01ƒ91‡5.");
-            },
-            onCancel: (paymentId) => { console.log("1„21†9 1ƒ71†81…81ƒ91ƒ3 1…71†91†81‡41„1 1ƒ91†81„71†51…7"); },
-            onError: (error, payment) => { console.error("1„61…51ƒ5 1†51‡4 1ƒ91†81„71†51…7:", error); },
-        });
-    } catch (err) {
-        console.error("1„21…71„81„9 1„01„71ƒ3 1…71†91†81‡41„1 1ƒ91†81„71†51…7:", err);
-    }
-}
+    <script>
+        // تهيئة Pi SDK بناءً على الإعدادات التي ظهرت في صورتك
+        const Pi = window.Pi;
+        Pi.init({ version: "2.0", sandbox: true }); // تم تفعيل Sandbox للتجربة
+
+        async function handlePayment(amount, itemName) {
+            const statusDiv = document.getElementById('status');
+            const platformWalletAddress = "GAJY6WGGRFEXTPMZAIC57MEKZUA5XMWYOWUQ4KL4GEUE3ZJWVUTJZN";
+
+            try {
+                statusDiv.innerText = "جاري تحضير عملية الدفع...";
+                
+                const payment = await Pi.createPayment({
+                    amount: amount,
+                    memo: "دفع لـ: " + itemName,
+                    metadata: { type: "reservation", target_wallet: platformWalletAddress },
+                }, {
+                    onReadyForServerApproval: (paymentId) => {
+                        console.log("Payment ID ready for approval:", paymentId);
+                        statusDiv.innerText = "في انتظار موافقة الخادم...";
+                    },
+                    onReadyForServerCompletion: (paymentId, txid) => {
+                        console.log("Payment completed! TXID:", txid);
+                        statusDiv.innerText = "تمت العملية بنجاح! رقم المعاملة: " + txid;
+                        alert("شكراً لك! تمت عملية الدفع بنجاح.");
+                    },
+                    onCancel: (paymentId) => {
+                        console.log("Payment cancelled.");
+                        statusDiv.innerText = "تم إلغاء العملية.";
+                    },
+                    onError: (error, payment) => {
+                        console.error("Payment error:", error);
+                        statusDiv.innerText = "حدث خطأ أثناء الدفع.";
+                    },
+                });
+            } catch (err) {
+                console.error("Error starting payment:", err);
+                statusDiv.innerText = "فشل في بدء عملية الدفع.";
+            }
+        }
+    </script>
+</body>
+</html>
