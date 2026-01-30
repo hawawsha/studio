@@ -1,0 +1,30 @@
+// إعدادات بيئة تطبيق الهواوشة (Backend Interface)
+const Pi = window.Pi;
+// تفعيل الـ Sandbox لضمان عمل الرابط داخل Pi Browser بدون مشاكل
+Pi.init({ version: "2.0", sandbox: true }); 
+
+// عنوان المحفظة الثالثة (خزنة المنصة المركزية) - المرتبطة بمحفظة أختك
+const platformWalletAddress = "GAJY6WGGRRGEFXTPMZAIC57MEKZUA5XMWYOWUQ4KL4GEUE3ZJWVUTJZN"; 
+
+async function handlePayment(amount, itemName) {
+    try {
+        console.log("إرسال طلب دفع للمحفظة: " + platformWalletAddress);
+        const payment = await Pi.createPayment({
+            amount: amount,
+            memo: "حجز من منصة الهواوشة: " + itemName,
+            metadata: { type: "reservation", target_wallet: platformWalletAddress },
+        }, {
+            onReadyForServerApproval: (paymentId) => {
+                console.log("Payment ID ready for approval:", paymentId);
+            },
+            onReadyForServerCompletion: (paymentId, txid) => {
+                console.log("تمت العملية بنجاح! رقم المعاملة:", txid);
+                alert("تم الحجز بنجاح! سيتم التواصل معك قريباً.");
+            },
+            onCancel: (paymentId) => { console.log("تم إلغاء عملية الدفع"); },
+            onError: (error, payment) => { console.error("خطأ في الدفع:", error); },
+        });
+    } catch (err) {
+        console.error("تعذر بدء عملية الدفع:", err);
+    }
+}
