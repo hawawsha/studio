@@ -6,11 +6,13 @@
     <title>واجهة الاستوديو - Pi Network</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f4f4; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: inline-block; }
-        button { background-color: #673ab7; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 50px; background-color: #f4f4f4; color: #333; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: inline-block; max-width: 90%; }
+        h2 { color: #673ab7; }
+        button { background-color: #673ab7; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; transition: 0.3s; width: 100%; }
         button:hover { background-color: #512da8; }
-        #status { margin-top: 20px; color: #555; }
+        #status { margin-top: 20px; padding: 10px; border-radius: 5px; background: #eeeeee; font-size: 14px; min-height: 40px; }
+        .info { font-size: 12px; color: #777; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -18,51 +20,87 @@
 <div class="container">
     <h2>واجهة التحكم في الاستوديو</h2>
     <p>مرحباً بك في الواجهة الخلفية لتطبيقك الأصلي.</p>
-    <button onclick="handlePayment(1, 'طلب خدمة من الاستوديو')">إرسال دفع تجريبي (1 Pi)</button>
-    <div id="status">جاهز للاتصال بـ Pi Network...</div>
+    
+    <button id="pay-button" onclick="handlePayment()">إرسال دفع تجريبي (1 Pi)</button>
+    
+    <div id="status">جاري تهيئة النظام...</div>
+    
+    <div class="info">
+        المحفظة المرتبطة: <br>
+        <small>GDNG3CFO...EUKM</small>
+    </div>
 </div>
 
 <script>
-    // إعدادات Pi SDK بناءً على الاستوديو الخاص بك
     const Pi = window.Pi;
+    const statusDiv = document.getElementById('status');
+
+    // 1. تهيئة الـ SDK بمفتاح الـ API الجديد الخاص بـ Hawawsheh
     Pi.init({ 
         version: "2.0", 
-        sandbox: true,
-        apiKey: "rxoxkdsrahgfofndr9i3uxhxtikq4teq7tqjgwhmvmlljfei4qs8obopwjbxy9av" 
+        sandbox: true // تأكد من جعلها false عند الانتقال للمين نت لاحقاً
     });
 
-    async function handlePayment(amount, itemName) {
-        const statusDiv = document.getElementById('status');
+    // 2. معالجة المدفوعات غير المكتملة (أهم جزء لتجنب رسالة الفشل)
+    async function onIncompletePaymentFound(payment) {
+        console.log("وجدنا عملية معلقة:", payment.identifier);
+        statusDiv.innerText = "هناك عملية سابقة معلقة، يتم معالجتها...";
+        // هنا يجب عادةً إخبار خادمك لإكمال العملية، للتبسيط سنقوم بعرض رسالة
+        // في الوضع الاحترافي، ترسل payment.identifier لخادمك
+    };
+
+    // 3. استدعاء تسجيل الدخول عند فتح الصفحة
+    async function auth() {
+        try {
+            const scopes = ['payments', 'username'];
+            const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+            statusDiv.innerText = "متصل بنجاح كـ: " + auth.user.username;
+            console.log("Logged in as:", auth.user.username);
+        } catch (err) {
+            console.error(err);
+            statusDiv.innerText = "خطأ في تسجيل الدخول: " + err.message;
+        }
+    }
+
+    // تشغيل تسجيل الدخول فور تحميل الصفحة
+    auth();
+
+    // 4. دالة الدفع الرئيسية (Pi.createPayment)
+    async function handlePayment() {
         const platformWalletAddress = "GDNG3CFOI34QTC27W7IJV7D2FRSK5XOJXGVBAN3BDCTYSHAYCCK5EUKM";
 
         try {
-            statusDiv.innerText = "جاري تحضير عملية الدفع...";
+            statusDiv.innerText = "جاري الاتصال بالمحفظة...";
 
             const payment = await Pi.createPayment({
-                amount: amount,
-                memo: "دفع لـ: " + itemName,
-                metadata: { type: "reservation", target_wallet: platformWalletAddress },
+                amount: 1,
+                memo: "دفع تجريبي لـ Hawawsheh Studio",
+                metadata: { orderId: "order_" + Date.now() },
             }, {
                 onReadyForServerApproval: (paymentId) => {
-                    statusDiv.innerText = "في انتظار موافقة الخادم...";
+                    console.log("جاهز لموافقة الخادم، ID:", paymentId);
+                    statusDiv.innerText = "جاري الحصول على موافقة الشبكة...";
+                    // ملاحظة: في تطبيق حقيقي، هنا ترسل paymentId لخادمك الخاص
                 },
                 onReadyForServerCompletion: (paymentId, txid) => {
-                    statusDiv.innerText = "تمت العملية بنجاح! رقم المعاملة: " + txid;
-                    alert("شكراً لك! تمت عملية الدفع بنجاح.");
+                    console.log("تمت المعاملة بنجاح، TXID:", txid);
+                    statusDiv.innerText = "✅ تمت العملية بنجاح! رقم المعاملة: " + txid;
+                    alert("نجحت المعاملة! شكراً لك.");
                 },
                 onCancel: (paymentId) => {
-                    statusDiv.innerText = "تم إلغاء العملية.";
+                    statusDiv.innerText = "❌ تم إلغاء العملية من قبل المستخدم.";
                 },
                 onError: (error, payment) => {
-                    console.error("Payment error:", error);
-                    statusDiv.innerText = "حدث خطأ أثناء الدفع.";
+                    console.error("خطأ في الدفع:", error);
+                    statusDiv.innerText = "❌ حدث خطأ: " + error.message;
                 },
             });
         } catch (err) {
-            console.error("Error starting payment:", err);
-            statusDiv.innerText = "فشل في بدء عملية الدفع.";
+            console.error("فشل بدء الدفع:", err);
+            statusDiv.innerText = "❌ فشل في بدء عملية الدفع: " + err.message;
         }
     }
 </script>
+
 </body>
 </html>
